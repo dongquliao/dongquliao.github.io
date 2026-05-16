@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>東區瞭的音乐库</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Color Emoji", Roboto, "Helvetica Neue", sans-serif; 
+            background: #f0f2f5; 
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container { 
+            max-width: 1600px; 
+            width: 100%;
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 16px; 
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1); 
+            overflow: visible;
+        }
+        
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 24px 30px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .header h1 { font-size: 28px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .update-info { font-size: 13px; opacity: 0.85; margin-top: 8px; }
+        
+        .stats-btn { 
+            background: rgba(255,255,255,0.2); 
+            color: white; 
+            border: 1px solid rgba(255,255,255,0.3); 
+            padding: 8px 20px; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: all 0.2s;
+        }
+        .stats-btn:hover { background: rgba(255,255,255,0.3); }
+        
+        .category-tabs { 
+            display: flex; 
+            gap: 4px; 
+            padding: 0 30px; 
+            background: #f8f9fa; 
+            border-bottom: 1px solid #e0e0e0; 
+            flex-wrap: wrap; 
+        }
+        .category-tab { 
+            padding: 14px 24px; 
+            cursor: pointer; 
+            background: none; 
+            border: none; 
+            font-size: 15px; 
+            font-weight: 500; 
+            color: #666; 
+            transition: all 0.2s; 
+            font-family: inherit;
+        }
+        .category-tab:hover { color: #667eea; }
+        .category-tab.active { 
+            color: #667eea; 
+            border-bottom: 3px solid #667eea; 
+            margin-bottom: -1px; 
+        }
+        
+        .controls { 
+            padding: 20px 30px; 
+            background: white; 
+            border-bottom: 1px solid #e0e0e0; 
+            display: flex; 
+            gap: 15px; 
+            flex-wrap: wrap; 
+            align-items: center; 
+        }
+        .search-box { flex: 1; min-width: 200px; }
+        .search-box input { 
+            width: 100%; 
+            padding: 10px 16px; 
+            border: 1px solid #ddd; 
+            border-radius: 24px; 
+            font-size: 14px; 
+            outline: none; 
+        }
+        .search-box input:focus { border-color: #667eea; }
+        
+        .filter-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        select, button { 
+            padding: 8px 16px; 
+            border: 1px solid #ddd; 
+            border-radius: 20px; 
+            background: white; 
+            cursor: pointer; 
+            font-size: 13px; 
+        }
+        button:hover { background: #667eea; color: white; border-color: #667eea; }
+        
+        .main-content { 
+            display: flex; 
+            gap: 20px; 
+            padding: 20px 30px; 
+            align-items: flex-start;
+        }
+        
+        .song-list-section { 
+            flex: 2; 
+            min-width: 0;
+        }
+        
+        .cover-section { 
+            flex: 1; 
+            min-width: 280px; 
+            max-width: 330px;
+        }
+        
+        .cover-card { 
+            background: #f8f9fa; 
+            border-radius: 16px; 
+            padding: 20px; 
+            text-align: center; 
+        }
+        .cover-card.sticky {
+            position: fixed;
+            top: 20px;
+            width: inherit;
+            max-width: inherit;
+            z-index: 99;
+        }
+        
+        .cover-card h4 { 
+            margin-bottom: 15px; 
+            color: #333; 
+            font-size: 16px; 
+            font-weight: normal;
+        }
+        .cover-image { 
+            width: 100%; 
+            aspect-ratio: 1; 
+            background: #e0e0e0; 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            margin-bottom: 15px; 
+        }
+        .cover-image img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+        }
+        .cover-image .no-cover { 
+            color: #999; 
+            font-size: 14px; 
+            text-align: center; 
+            padding: 20px; 
+        }
+        .cover-info { 
+            text-align: left; 
+            font-size: 14px; 
+            color: #666; 
+            line-height: 1.8;
+        }
+        .cover-info p { 
+            margin: 8px 0; 
+            word-break: break-word;
+            display: flex;
+            align-items: baseline;
+        }
+        .cover-info strong { 
+            color: #333; 
+            width: 60px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .cover-info span {
+            flex: 1;
+        }
+        
+        .stats-in-card { 
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+	    user-select: none;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 14px;
+            table-layout: fixed;
+        }
+        th, td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        th:first-child, td:first-child { padding-left: 12px; }
+        th:last-child, td:last-child { padding-right: 12px; }
+        
+        th:nth-child(1) { width: 20%; }
+        th:nth-child(2) { width: 18%; }
+        th:nth-child(3) { width: 20%; }
+        th:nth-child(4) { width: 15%; }
+        th:nth-child(5) { width: 8%; }
+        th:nth-child(6) { width: 8%; }
+        th:nth-child(7) { width: 11%; }
+        
+        thead tr th {
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            z-index: 10;
+        }
+        
+        th { 
+            text-align: left; 
+            border-bottom: 2px solid #e0e0e0; 
+            cursor: pointer; 
+            user-select: none; 
+            font-weight: 600;
+            background: #f8f9fa;
+        }
+        th:hover { background: #e9ecef; }
+        .song-row { cursor: pointer; }
+        .song-row:hover { background: #f8f9fa; }
+        .song-row.selected { background: #e8eaf6; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; background: #e0e0e0; color: #666; }
+        
+        .loading-more {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 13px;
+        }
+        
+        .cover-wrapper {
+            position: relative;
+        }
+        
+        /* 统计弹窗样式 */
+        .modal-stats {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-stats-content {
+            background: white;
+            border-radius: 20px;
+            width: 95vw;
+            max-width: 1400px;
+            height: 90vh;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .modal-stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        
+        .modal-stats-header h2 {
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .modal-stats-close {
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-stats-close:hover {
+            color: #333;
+        }
+        
+        .chart-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        
+        .chart-tab-btn {
+            padding: 6px 16px;
+            background: #f0f2f5;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .chart-tab-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .chart-tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .chart-panel {
+            display: none;
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+        }
+        
+        .chart-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        
+        .zoom-btn {
+            padding: 4px 12px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .zoom-btn:hover {
+            background: #ccc;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 15px;
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            cursor: grab;
+        }
+        
+        .chart-container:active {
+            cursor: grabbing;
+        }
+        
+        .chart-container canvas {
+            max-height: 100%;
+            width: 100%;
+        }
+        
+        .pie-chart-container {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .pie-chart-container canvas {
+            max-width: 400px;
+            max-height: 400px;
+        }
+        
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        .modal-content { 
+            background: white; 
+            border-radius: 16px; 
+            max-width: 600px; 
+            width: 90%; 
+            max-height: 80vh; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .modal-header { 
+            padding: 20px 24px; 
+            border-bottom: 1px solid #e0e0e0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .modal-header h3 { font-size: 18px; color: #333; }
+        .modal-header .close { font-size: 28px; cursor: pointer; color: #999; }
+        .modal-header .close:hover { color: #333; }
+        .modal-body { padding: 20px 24px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.6; }
+        .no-lyrics { color: #999; font-style: italic; }
+        
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+            .cover-section { max-width: 100%; }
+            th, td { font-size: 11px; padding: 6px 4px; }
+            .category-tab { padding: 10px 16px; }
+            .cover-card.sticky { position: relative; top: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>東區瞭的音乐库
+            <button class="stats-btn" id="statsBtn">📊 统计</button>
+        </h1>
+        <div class="update-info" id="updateInfo">加载中...</div>
+    </div>
+    
+    <div class="category-tabs" id="categoryTabs">
+        <button class="category-tab active" data-category="all">全部</button>
+        <button class="category-tab" data-category="人声">人声</button>
+        <button class="category-tab" data-category="ボカロ">ボカロ</button>
+        <button class="category-tab" data-category="纯音乐">纯音乐</button>
+        <button class="category-tab" data-category="AI">AI</button>
+    </div>
+    <div class="controls">
+        <div class="search-box"><input type="text" id="searchInput" placeholder="搜索标题、艺术家、作曲、专辑..."></div>
+        <div class="filter-group">
+            <select id="sortSelect">
+                <option value="title_asc">标题 ↑</option><option value="title_desc">标题 ↓</option>
+                <option value="artist_asc">艺术家 ↑</option><option value="artist_desc">艺术家 ↓</option>
+                <option value="album_asc">专辑 ↑</option><option value="album_desc">专辑 ↓</option>
+                <option value="composer_asc">作曲 ↑</option><option value="composer_desc">作曲 ↓</option>
+                <option value="year_asc">年份 ↑</option><option value="year_desc">年份 ↓</option>
+            </select>
+            <button id="resetBtn">重置筛选</button>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="song-list-section">
+            <table id="songTable">
+                <thead><tr id="tableHeader"></tr></thead>
+                <tbody id="songTableBody"></tbody>
+            </table>
+            <div id="loadingMore" class="loading-more" style="display: none;">加载更多...</div>
+        </div>
+        <div class="cover-section">
+            <div class="cover-wrapper" id="coverWrapper">
+                <div class="cover-card" id="coverCard">
+                    <div class="cover-image" id="coverImage">
+                        <div class="no-cover">无封面图片</div>
+                    </div>
+                    <div class="cover-info" id="coverInfo">
+                        <p><strong>当前歌曲</strong><br>—</p>
+                    </div>
+                    <div class="stats-in-card" id="statsInCard" ondblclick="doubleClickStats()">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 统计弹窗 -->
+<div id="statsModal" class="modal-stats">
+    <div class="modal-stats-content">
+        <div class="modal-stats-header">
+            <h2 id="modalStatsTitle">📊 音乐库统计</h2>
+            <span class="modal-stats-close" onclick="closeStatsModal()">&times;</span>
+        </div>
+        
+        <div class="chart-tabs">
+            <button class="chart-tab-btn active" data-chart="category">类别比例</button>
+            <button class="chart-tab-btn" data-chart="year">年份分布</button>
+            <button class="chart-tab-btn" data-chart="composer">P主歌曲数</button>
+            <button class="chart-tab-btn" data-chart="virtual">歌姬歌曲数</button>
+            <button class="chart-tab-btn" data-chart="singer">歌手歌曲数</button>
+        </div>
+        
+        <div id="chartPanelCategory" class="chart-panel active">
+            <div class="pie-chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chartPanelYear" class="chart-panel">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn('yearChart')">放大 +</button>
+                <button class="zoom-btn" onclick="zoomOut('yearChart')">缩小 -</button>
+                <button class="zoom-btn" onclick="resetZoom('yearChart')">重置</button>
+                <span style="font-size:11px; color:#888;">💡 鼠标拖拽平移 | Ctrl+滚轮缩放</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="yearChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chartPanelComposer" class="chart-panel">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn('composerChart')">放大 +</button>
+                <button class="zoom-btn" onclick="zoomOut('composerChart')">缩小 -</button>
+                <button class="zoom-btn" onclick="resetZoom('composerChart')">重置</button>
+                <span style="font-size:11px; color:#888;">💡 鼠标拖拽平移 | Ctrl+滚轮缩放</span>
+            </div>
+            <div class="chart-container" style="overflow-y: auto;">
+                <canvas id="composerChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chartPanelVirtual" class="chart-panel">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn('virtualSingerChart')">放大 +</button>
+                <button class="zoom-btn" onclick="zoomOut('virtualSingerChart')">缩小 -</button>
+                <button class="zoom-btn" onclick="resetZoom('virtualSingerChart')">重置</button>
+                <span style="font-size:11px; color:#888;">💡 鼠标拖拽平移 | Ctrl+滚轮缩放</span>
+            </div>
+            <div class="chart-container" style="overflow-y: auto;">
+                <canvas id="virtualSingerChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chartPanelSinger" class="chart-panel">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn('singerChart')">放大 +</button>
+                <button class="zoom-btn" onclick="zoomOut('singerChart')">缩小 -</button>
+                <button class="zoom-btn" onclick="resetZoom('singerChart')">重置</button>
+                <span style="font-size:11px; color:#888;">💡 鼠标拖拽平移 | Ctrl+滚轮缩放</span>
+            </div>
+            <div class="chart-container" style="overflow-y: auto;">
+                <canvas id="singerChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 歌词弹窗 -->
+<div id="lyricModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">歌词</h3>
+            <span class="close" onclick="closeLyricModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+    // 注册 zoom 插件和所需的 Hammer.js
+    Chart.register(ChartZoom);
+    
+    let allSongs = [];
+    let filteredSongs = [];
+    let currentCategory = 'all';
+    let currentSearch = '';
+    let currentSortBy = 'title';
+    let currentSortOrder = 'asc';
+    let currentSelectedSong = null;
+    
+    let currentDisplayCount = 100;
+    const PAGE_SIZE = 100;
+    let isLoadingMore = false;
+    
+    let statsData = null;
+    let charts = {};
+    let totalDurationStr = '';
+    
+    function setupStickyCover() {
+        const coverCard = document.getElementById('coverCard');
+        const coverWrapper = document.getElementById('coverWrapper');
+        if (!coverCard || !coverWrapper) return;
+        const originalTop = coverWrapper.offsetTop;
+        const cardWidth = coverCard.clientWidth;
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop + 20 >= originalTop) {
+                coverCard.classList.add('sticky');
+                coverCard.style.width = cardWidth + 'px';
+            } else {
+                coverCard.classList.remove('sticky');
+                coverCard.style.width = '';
+            }
+        });
+    }
+    
+    function zoomIn(chartId) {
+        if (charts[chartId]) {
+            charts[chartId].zoom(1.2);
+        }
+    }
+    
+    function zoomOut(chartId) {
+        if (charts[chartId]) {
+            charts[chartId].zoom(0.8);
+        }
+    }
+    
+    function resetZoom(chartId) {
+        if (charts[chartId]) {
+            charts[chartId].resetZoom();
+        }
+    }
+    
+    function calculateStats() {
+        let totalSeconds = 0;
+        let categoryCount = { AI: 0, ボカロ: 0, 人声: 0, 纯音乐: 0 };
+        let yearCount = {};
+        let composerCount = {};
+        let virtualSingerCount = {};
+        let realSingerCount = {};
+        let minYear = 3000, maxYear = 0;
+        
+        for (let song of allSongs) {
+            totalSeconds += song.duration_seconds || 0;
+            if (categoryCount[song.category] !== undefined) categoryCount[song.category]++;
+            
+            let year = song.year;
+            if (year && year !== '未知' && year !== '' && !isNaN(parseInt(year))) {
+                let yearNum = parseInt(year);
+                yearCount[year] = (yearCount[year] || 0) + 1;
+                if (yearNum < minYear) minYear = yearNum;
+                if (yearNum > maxYear) maxYear = yearNum;
+            }
+            
+            if (song.category === 'ボカロ') {
+                if (song.composer_list) {
+                    for (let c of song.composer_list) if (c) composerCount[c] = (composerCount[c] || 0) + 1;
+                }
+                if (song.vocaloid_artist && song.vocaloid_artist.virtual) {
+                    for (let v of song.vocaloid_artist.virtual) if (v) virtualSingerCount[v] = (virtualSingerCount[v] || 0) + 1;
+                }
+                if (song.vocaloid_artist && song.vocaloid_artist.real) {
+                    for (let r of song.vocaloid_artist.real) if (r) realSingerCount[r] = (realSingerCount[r] || 0) + 1;
+                }
+            }
+            if (song.category === '人声' && song.artist_list) {
+                for (let a of song.artist_list) if (a) realSingerCount[a] = (realSingerCount[a] || 0) + 1;
+            }
+        }
+        
+        if (minYear <= maxYear) {
+            for (let y = minYear; y <= maxYear; y++) {
+                let yearStr = y.toString();
+                if (!yearCount[yearStr]) yearCount[yearStr] = 0;
+            }
+        }
+        
+        let hours = Math.floor(totalSeconds / 3600);
+        let minutes = Math.floor((totalSeconds % 3600) / 60);
+        totalDurationStr = `${hours} 小时 ${minutes} 分钟`;
+        
+        let sortedYearCount = {};
+        Object.keys(yearCount).sort((a, b) => parseInt(a) - parseInt(b)).forEach(key => { sortedYearCount[key] = yearCount[key]; });
+        
+        return { totalDuration: totalDurationStr, categoryCount, yearCount: sortedYearCount, composerCount, virtualSingerCount, realSingerCount };
+    }
+    
+    function destroyCharts() {
+        for (let key in charts) {
+            if (charts[key]) { charts[key].destroy(); }
+        }
+        charts = {};
+    }
+    
+    function getMaxDataValue(dataArray) {
+        if (dataArray.length === 0) return 1;
+        return Math.max(...dataArray, 1);
+    }
+    
+    function renderAllCharts(stats) {
+        destroyCharts();
+        
+        // 1. 饼图
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        charts.categoryChart = new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: ['AI', 'ボカロ', '人声', '纯音乐'],
+                datasets: [{ data: [stats.categoryCount.AI, stats.categoryCount.ボカロ, stats.categoryCount.人声, stats.categoryCount.纯音乐], backgroundColor: ['#667eea', '#48bb78', '#ed8936', '#a0aec0'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+        });
+        
+        // 2. 年份分布
+        const years = Object.keys(stats.yearCount);
+        const yearData = years.map(y => stats.yearCount[y]);
+        const yearCtx = document.getElementById('yearChart').getContext('2d');
+        charts.yearChart = new Chart(yearCtx, {
+            type: 'bar',
+            data: { labels: years, datasets: [{ label: '歌曲数', data: yearData, backgroundColor: '#667eea' }] },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                scales: { x: { title: { display: true, text: '年份' } }, y: { beginAtZero: true, min: 0, title: { display: true, text: '歌曲数' } } },
+                plugins: {
+                    legend: { display: false },
+                    zoom: {
+                        pan: { enabled: true, mode: 'x', threshold: 5 },
+                        zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, mode: 'x', speed: 0.1 }
+                    }
+                }
+            }
+        });
+        
+        // 3. P主
+        const composers = Object.entries(stats.composerCount).sort((a, b) => b[1] - a[1]);
+        const composerData = composers.map(c => c[1]);
+        const maxComposer = getMaxDataValue(composerData);
+        const composerCtx = document.getElementById('composerChart').getContext('2d');
+        charts.composerChart = new Chart(composerCtx, {
+            type: 'bar',
+            data: { labels: composers.map(c => c[0]), datasets: [{ label: '歌曲数', data: composerData, backgroundColor: '#48bb78' }] },
+            options: {
+                responsive: true, maintainAspectRatio: true, indexAxis: 'y',
+                scales: { x: { min: 0, max: maxComposer, title: { display: true, text: '歌曲数' } }, y: { title: { display: true, text: 'P主' } } },
+                plugins: {
+                    legend: { position: 'right' },
+                    zoom: {
+                        pan: { enabled: true, mode: 'y', threshold: 5 },
+                        zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, mode: 'y', speed: 0.1 }
+                    }
+                }
+            }
+        });
+        document.getElementById('composerChart').style.height = Math.max(400, composers.length * 30) + 'px';
+        
+        // 4. 歌姬
+        const virtualSingers = Object.entries(stats.virtualSingerCount).sort((a, b) => b[1] - a[1]);
+        const virtualData = virtualSingers.map(v => v[1]);
+        const maxVirtual = getMaxDataValue(virtualData);
+        const virtualCtx = document.getElementById('virtualSingerChart').getContext('2d');
+        charts.virtualSingerChart = new Chart(virtualCtx, {
+            type: 'bar',
+            data: { labels: virtualSingers.map(v => v[0]), datasets: [{ label: '歌曲数', data: virtualData, backgroundColor: '#ed8936' }] },
+            options: {
+                responsive: true, maintainAspectRatio: true, indexAxis: 'y',
+                scales: { x: { min: 0, max: maxVirtual, title: { display: true, text: '歌曲数' } }, y: { title: { display: true, text: '歌姬' } } },
+                plugins: {
+                    legend: { position: 'right' },
+                    zoom: {
+                        pan: { enabled: true, mode: 'y', threshold: 5 },
+                        zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, mode: 'y', speed: 0.1 }
+                    }
+                }
+            }
+        });
+        document.getElementById('virtualSingerChart').style.height = Math.max(400, virtualSingers.length * 30) + 'px';
+        
+        // 5. 歌手
+        const singers = Object.entries(stats.realSingerCount).sort((a, b) => b[1] - a[1]);
+        const singerData = singers.map(s => s[1]);
+        const maxSinger = getMaxDataValue(singerData);
+        const singerCtx = document.getElementById('singerChart').getContext('2d');
+        charts.singerChart = new Chart(singerCtx, {
+            type: 'bar',
+            data: { labels: singers.map(s => s[0]), datasets: [{ label: '歌曲数', data: singerData, backgroundColor: '#a855f7' }] },
+            options: {
+                responsive: true, maintainAspectRatio: true, indexAxis: 'y',
+                scales: { x: { min: 0, max: maxSinger, title: { display: true, text: '歌曲数' } }, y: { title: { display: true, text: '歌手' } } },
+                plugins: {
+                    legend: { position: 'right' },
+                    zoom: {
+                        pan: { enabled: true, mode: 'y', threshold: 5 },
+                        zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, mode: 'y', speed: 0.1 }
+                    }
+                }
+            }
+        });
+        document.getElementById('singerChart').style.height = Math.max(400, singers.length * 30) + 'px';
+    }
+    
+    function openStatsModal() {
+        const modal = document.getElementById('statsModal');
+        const modalTitle = document.getElementById('modalStatsTitle');
+        if (!statsData) statsData = calculateStats();
+        modalTitle.innerHTML = `📊 音乐库统计（总时长：${statsData.totalDuration}）`;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => renderAllCharts(statsData), 100);
+    }
+    
+    function closeStatsModal() { 
+        document.getElementById('statsModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    function setupChartTabs() {
+        const tabs = document.querySelectorAll('.chart-tab-btn');
+        const panels = {
+            category: document.getElementById('chartPanelCategory'),
+            year: document.getElementById('chartPanelYear'),
+            composer: document.getElementById('chartPanelComposer'),
+            virtual: document.getElementById('chartPanelVirtual'),
+            singer: document.getElementById('chartPanelSinger')
+        };
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const chartId = tab.dataset.chart;
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                Object.values(panels).forEach(p => { if (p) p.classList.remove('active'); });
+                if (panels[chartId]) panels[chartId].classList.add('active');
+                setTimeout(() => {
+                    if (charts.yearChart && chartId === 'year') charts.yearChart.resize();
+                    if (charts.composerChart && chartId === 'composer') charts.composerChart.resize();
+                    if (charts.virtualSingerChart && chartId === 'virtual') charts.virtualSingerChart.resize();
+                    if (charts.singerChart && chartId === 'singer') charts.singerChart.resize();
+                    if (charts.categoryChart && chartId === 'category') charts.categoryChart.resize();
+                }, 50);
+            });
+        });
+    }
+    
+    async function loadData() {
+        try {
+            // 从 OSS 读取 JSON 文件
+            const response = await fetch('https://dongquliaomusicdb-jsonandcovers.oss-cn-beijing.aliyuncs.com/data/music_data.json');
+            const data = await response.json();
+            allSongs = data.songs;
+            document.getElementById('updateInfo').innerHTML = `更新于 ${data.update_date} | 共 ${data.total_songs} 首歌`;
+            renderCategoryCounts();
+            filterAndRender();
+            setTimeout(setupStickyCover, 100);
+        } catch(e) {
+            console.error(e);
+            document.getElementById('updateInfo').innerHTML = '加载失败，请确保 OSS 配置正确';
+        }
+    }
+    
+    function renderCategoryCounts() {
+        const counts = { all: allSongs.length };
+        allSongs.forEach(song => { counts[song.category] = (counts[song.category] || 0) + 1; });
+        const tabs = document.querySelectorAll('.category-tab');
+        tabs.forEach(tab => {
+            const cat = tab.dataset.category;
+            const count = counts[cat] || 0;
+            tab.innerHTML = `${cat} (${count})`;
+            if (cat === 'all') tab.innerHTML = `全部 (${count})`;
+        });
+    }
+    
+    function matchesSearch(song, search) {
+        if (!search) return true;
+        const s = search.toLowerCase();
+        if (song.title?.toLowerCase().includes(s)) return true;
+        if (song.artist?.toLowerCase().includes(s)) return true;
+        if (song.album?.toLowerCase().includes(s)) return true;
+        if (song.composer?.toLowerCase().includes(s)) return true;
+        if (song.artist_list) { for (let a of song.artist_list) if (a?.toLowerCase().includes(s)) return true; }
+        if (song.composer_list) { for (let c of song.composer_list) if (c?.toLowerCase().includes(s)) return true; }
+        return false;
+    }
+    
+    function filterSongs() {
+        let songs = allSongs;
+        if (currentCategory !== 'all') songs = songs.filter(s => s.category === currentCategory);
+        if (currentSearch) songs = songs.filter(s => matchesSearch(s, currentSearch));
+        return songs;
+    }
+    
+    function sortSongs(songs) {
+        return [...songs].sort((a, b) => {
+            let aVal = a[currentSortBy] || '', bVal = b[currentSortBy] || '';
+            if (currentSortBy === 'year') { aVal = parseInt(aVal) || 0; bVal = parseInt(bVal) || 0; }
+            return currentSortOrder === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+        });
+    }
+    
+    function renderTableHeader() {
+        const isVocaloid = (currentCategory === 'ボカロ');
+        document.getElementById('tableHeader').innerHTML = isVocaloid ?
+            `<th onclick="changeSort('title')">标题</th><th onclick="changeSort('artist')">艺术家</th><th onclick="changeSort('album')">专辑</th><th onclick="changeSort('composer')">作曲</th><th onclick="changeSort('year')">年份</th><th>时长</th><th onclick="changeSort('tune')">调校</th>` :
+            `<th onclick="changeSort('title')">标题</th><th onclick="changeSort('artist')">艺术家</th><th onclick="changeSort('album')">专辑</th><th onclick="changeSort('composer')">作曲</th><th onclick="changeSort('year')">年份</th><th>时长</th>`;
+    }
+    
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    
+    function selectSong(song) {
+        if (!song) return;
+        currentSelectedSong = song;
+        document.querySelectorAll('.song-row').forEach(row => row.classList.remove('selected'));
+        
+        // 更新封面
+        const coverImageDiv = document.getElementById('coverImage');
+        if (song.cover_url) {
+            coverImageDiv.innerHTML = `<img src="${song.cover_url}" alt="封面">`;
+        } else {
+            coverImageDiv.innerHTML = '<div class="no-cover">无封面图片</div>';
+        }
+        
+        // 更新歌曲信息
+        const coverInfo = document.getElementById('coverInfo');
+        coverInfo.innerHTML = `<p><strong>当前歌曲</strong></p><p><strong>标题：</strong><span>${escapeHtml(song.title || '?')}</span></p><p><strong>艺术家：</strong><span>${escapeHtml(song.artist || '?')}</span></p><p><strong>专辑：</strong><span>${escapeHtml(song.album || '?')}</span></p><p><strong>年份：</strong><span>${song.year || '?'}</span></p>`;
+    }
+    
+    function showLyrics(song) {
+        const modal = document.getElementById('lyricModal');
+        document.getElementById('modalTitle').innerHTML = `${escapeHtml(song.title)} - ${escapeHtml(song.artist)}`;
+        document.getElementById('modalBody').innerHTML = (song.lyrics && song.lyrics.trim()) ? `<pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${escapeHtml(song.lyrics)}</pre>` : '<div class="no-lyrics">这首歌没有歌词文件</div>';
+        modal.style.display = 'flex';
+    }
+    
+    function closeLyricModal() { document.getElementById('lyricModal').style.display = 'none'; }
+    function doubleClickStats() {
+    if (currentSelectedSong) {
+        showLyrics(currentSelectedSong);
+    }
+}
+    document.getElementById('lyricModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeLyricModal(); });
+    
+    function renderTable() {
+        renderTableHeader();
+        const tbody = document.getElementById('songTableBody');
+        tbody.innerHTML = '';
+        const isVocaloid = (currentCategory === 'ボカロ');
+        const displaySongs = filteredSongs.slice(0, currentDisplayCount);
+        displaySongs.forEach(song => {
+            const row = tbody.insertRow();
+            row.className = 'song-row';
+            row.onclick = () => selectSong(song);
+            row.ondblclick = () => showLyrics(song);
+            row.insertCell(0).innerHTML = `<strong>${escapeHtml(song.title || '?')}</strong>`;
+            row.insertCell(1).innerHTML = escapeHtml(song.artist || '—');
+            row.insertCell(2).innerHTML = escapeHtml(song.album || '—');
+            row.insertCell(3).innerHTML = escapeHtml(song.composer || '—');
+            row.insertCell(4).innerHTML = song.year || '—';
+            row.insertCell(5).innerHTML = song.duration || '—';
+            if (isVocaloid) row.insertCell(6).innerHTML = song.tune ? `<span class="badge">${escapeHtml(song.tune)}</span>` : '';
+        });
+        document.getElementById('statsInCard').innerHTML = `显示 ${displaySongs.length} / ${filteredSongs.length} 首歌曲（双击查看歌词）`;
+        document.getElementById('loadingMore').style.display = (currentDisplayCount < filteredSongs.length) ? 'block' : 'none';
+        if (displaySongs.length > 0) {
+            const stillSelected = currentSelectedSong && displaySongs.some(s => s.title === currentSelectedSong.title && s.artist === currentSelectedSong.artist);
+            if (!stillSelected) { selectSong(displaySongs[0]); document.querySelectorAll('.song-row')[0]?.classList.add('selected'); }
+            else {
+                const idx = displaySongs.findIndex(s => s.title === currentSelectedSong.title && s.artist === currentSelectedSong.artist);
+                if (idx !== -1) document.querySelectorAll('.song-row')[idx]?.classList.add('selected');
+            }
+        }
+    }
+    
+    function loadMore() {
+        if (isLoadingMore || currentDisplayCount >= filteredSongs.length) return;
+        isLoadingMore = true;
+        document.getElementById('loadingMore').innerHTML = '正在加载...';
+        setTimeout(() => {
+            currentDisplayCount = Math.min(currentDisplayCount + PAGE_SIZE, filteredSongs.length);
+            renderTable();
+            isLoadingMore = false;
+        }, 100);
+    }
+    
+    function filterAndRender() {
+        filteredSongs = sortSongs(filterSongs());
+        currentDisplayCount = Math.min(PAGE_SIZE, filteredSongs.length);
+        renderTable();
+        window.scrollTo(0, 0);
+    }
+    
+    function changeSort(field) {
+        if (currentSortBy === field) currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        else { currentSortBy = field; currentSortOrder = 'asc'; }
+        filterAndRender();
+    }
+    
+    let scrollTimer = null;
+    function onWindowScroll() {
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const docHeight = document.documentElement.scrollHeight;
+            if (scrollTop + windowHeight >= docHeight - 200 && currentDisplayCount < filteredSongs.length && !isLoadingMore) loadMore();
+        }, 100);
+    }
+    
+    document.getElementById('searchInput').addEventListener('input', e => { currentSearch = e.target.value; filterAndRender(); });
+    document.getElementById('sortSelect').addEventListener('change', e => { const [by, order] = e.target.value.split('_'); currentSortBy = by; currentSortOrder = order; filterAndRender(); });
+    document.getElementById('resetBtn').addEventListener('click', () => { document.getElementById('searchInput').value = ''; currentSearch = ''; filterAndRender(); });
+    document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentCategory = tab.dataset.category;
+            filterAndRender();
+        });
+    });
+    document.getElementById('statsBtn').addEventListener('click', openStatsModal);
+    window.addEventListener('scroll', onWindowScroll);
+    
+    loadData();
+    setupChartTabs();
+    window.zoomIn = zoomIn; window.zoomOut = zoomOut; window.resetZoom = resetZoom;
+</script>
+</body>
+</html>
