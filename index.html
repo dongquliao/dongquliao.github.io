@@ -531,13 +531,118 @@
         .modal-body { padding: 20px 24px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.6; }
         .no-lyrics { color: #999; font-style: italic; }
         
-        @media (max-width: 768px) {
-            .main-content { flex-direction: column; }
-            .cover-section { max-width: 100%; }
-            th, td { font-size: 11px; padding: 6px 4px; }
-            .category-tab { padding: 10px 16px; }
-            .cover-card.sticky { position: relative; top: 0; }
-        }
+
+/* ===== 移动端专用样式（只在手机宽度 ≤ 768px 时生效） ===== */
+@media (max-width: 768px) {
+    /* 隐藏电脑端的表格表头 */
+    #songTable thead {
+        display: none;
+    }
+
+    /* 将表格行改为卡片 */
+    #songTable,
+    #songTable tbody,
+    #songTable tr,
+    #songTable td {
+        display: block;
+        width: 100%;
+    }
+
+    #songTable tr {
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 12px;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    /* 卡片内的单元格样式 */
+    #songTable td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border: none;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* 添加标签（使用 data-label） */
+    #songTable td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        width: 80px;
+        flex-shrink: 0;
+        color: #666;
+        font-size: 13px;
+    }
+
+    /* 其他移动端优化 */
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        border-radius: 12px;
+    }
+
+    .header {
+        padding: 16px 20px;
+    }
+
+    .header-left h1 {
+        font-size: 22px;
+    }
+
+    .category-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    .filter-group {
+        justify-content: space-between;
+    }
+
+    .filter-group select,
+    .filter-group button {
+        flex: 1;
+    }
+
+    /* 封面移到顶部 */
+    .main-content {
+        flex-direction: column;
+    }
+
+    .cover-section {
+        max-width: 100%;
+        order: -1;
+        margin-bottom: 20px;
+    }
+
+    .cover-card.sticky {
+        position: relative;
+        top: 0;
+    }
+
+    /* 表格单元格内的 strong 标签样式调整 */
+    #songTable td strong {
+        font-weight: 600;
+    }
+}
+
+
     </style>
 </head>
 <body>
@@ -1018,18 +1123,18 @@
     
 // zoomLevel 没有上限，可以一直放大到显示 10 人
 let visibleCount = Math.max(10, Math.floor(totalItems / composerZoomLevel));
-    
+
     // 确保显示数量不超过总数
     visibleCount = Math.min(totalItems, visibleCount);
-    
+
     const startIdx = Math.max(0, Math.min(totalItems - visibleCount, composerPanOffset));
     const endIdx = Math.min(totalItems, startIdx + visibleCount);
     const displayComposers = composers.slice(startIdx, endIdx);
     const displayData = composerData.slice(startIdx, endIdx);
-    
+
     const maxInView = Math.max(...displayData, 0);
     let xMax = Math.max(5, Math.ceil(maxInView * 1.1));
-    
+
     if (charts.composerChart) {
         charts.composerChart.data.labels = displayComposers.map(c => c[0]);
         charts.composerChart.data.datasets[0].data = displayData;
@@ -1042,8 +1147,8 @@ let visibleCount = Math.max(10, Math.floor(totalItems / composerZoomLevel));
             data: { labels: displayComposers.map(c => c[0]), datasets: [{ label: '歌曲数', data: displayData, backgroundColor: '#48bb78' }] },
             options: {
                 responsive: true, maintainAspectRatio: true, indexAxis: 'y',
-                scales: { 
-                    x: { min: 0, max: xMax, title: { display: true, text: '歌曲数' }, ticks: { stepSize: 1 } }, 
+                scales: {
+                    x: { min: 0, max: xMax, title: { display: true, text: '歌曲数' }, ticks: { stepSize: 1 } },
                     y: { title: { display: true, text: 'P主' }, ticks: { autoSkip: false, font: { size: 10 } } ,grid: { display: false }}
                 },
                 plugins: { legend: { position: 'right' } }
@@ -1052,26 +1157,26 @@ let visibleCount = Math.max(10, Math.floor(totalItems / composerZoomLevel));
     }
     document.getElementById('composerChart').style.height = Math.max(400, visibleCount * 30) + 'px';
 }
-    
+
     function updateVirtualChart() {
     const virtualSingers = Object.entries(statsData.virtualSingerCount).sort((a, b) => b[1] - a[1]);
     const virtualData = virtualSingers.map(v => v[1]);
     const totalItems = virtualSingers.length;
-    
+
     // zoomLevel 没有上限，可以一直放大到显示 10 人
     let visibleCount = Math.max(10, Math.floor(totalItems / virtualZoomLevel));
-    
+
     // 确保显示数量不超过总数
     visibleCount = Math.min(totalItems, visibleCount);
-    
+
     const startIdx = Math.max(0, Math.min(totalItems - visibleCount, virtualPanOffset));
     const endIdx = Math.min(totalItems, startIdx + visibleCount);
     const displaySingers = virtualSingers.slice(startIdx, endIdx);
     const displayData = virtualData.slice(startIdx, endIdx);
-    
+
     const maxInView = Math.max(...displayData, 0);
     let xMax = Math.max(5, Math.ceil(maxInView * 1.1));
-    
+
     if (charts.virtualSingerChart) {
         charts.virtualSingerChart.data.labels = displaySingers.map(v => v[0]);
         charts.virtualSingerChart.data.datasets[0].data = displayData;
@@ -1084,8 +1189,8 @@ let visibleCount = Math.max(10, Math.floor(totalItems / composerZoomLevel));
             data: { labels: displaySingers.map(v => v[0]), datasets: [{ label: '歌曲数', data: displayData, backgroundColor: '#ed8936' }] },
             options: {
                 responsive: true, maintainAspectRatio: true, indexAxis: 'y',
-                scales: { 
-                    x: { min: 0, max: xMax, title: { display: true, text: '歌曲数' }, ticks: { stepSize: 1 } }, 
+                scales: {
+                    x: { min: 0, max: xMax, title: { display: true, text: '歌曲数' }, ticks: { stepSize: 1 } },
                     y: { title: { display: true, text: '歌姬' }, ticks: { autoSkip: false, font: { size: 10 } } ,grid: { display: false }}
                 },
                 plugins: { legend: { position: 'right' } }
@@ -1094,26 +1199,26 @@ let visibleCount = Math.max(10, Math.floor(totalItems / composerZoomLevel));
     }
     document.getElementById('virtualSingerChart').style.height = Math.max(400, visibleCount * 30) + 'px';
 }
-    
+
    function updateSingerChart() {
     const singers = Object.entries(statsData.realSingerCount).sort((a, b) => b[1] - a[1]);
     const singerData = singers.map(s => s[1]);
     const totalItems = singers.length;
-    
+
     // zoomLevel 没有上限，可以一直放大到显示 10 人
     let visibleCount = Math.max(10, Math.floor(totalItems / singerZoomLevel));
-    
+
     // 确保显示数量不超过总数
     visibleCount = Math.min(totalItems, visibleCount);
-    
+
     const startIdx = Math.max(0, Math.min(totalItems - visibleCount, singerPanOffset));
     const endIdx = Math.min(totalItems, startIdx + visibleCount);
     const displaySingers = singers.slice(startIdx, endIdx);
     const displayData = singerData.slice(startIdx, endIdx);
-    
+
     const maxInView = Math.max(...displayData, 0);
     let xMax = Math.max(5, Math.ceil(maxInView * 1.1));
-    
+
     if (charts.singerChart) {
         charts.singerChart.data.labels = displaySingers.map(s => s[0]);
         charts.singerChart.data.datasets[0].data = displayData;
@@ -1126,8 +1231,8 @@ let visibleCount = Math.max(10, Math.floor(totalItems / composerZoomLevel));
             data: { labels: displaySingers.map(s => s[0]), datasets: [{ label: '歌曲数', data: displayData, backgroundColor: '#a855f7' }] },
             options: {
                 responsive: true, maintainAspectRatio: true, indexAxis: 'y',
-                scales: { 
-                    x: { min: 0, max: xMax, title: { display: true, text: '歌曲数' }, ticks: { stepSize: 1 } }, 
+                scales: {
+                    x: { min: 0, max: xMax, title: { display: true, text: '歌曲数' }, ticks: { stepSize: 1 } },
                     y: { title: { display: true, text: '歌手' }, ticks: { autoSkip: false, font: { size: 10 } } ,grid: { display: false }}
                 },
                 plugins: { legend: { position: 'right' } }
@@ -1392,35 +1497,70 @@ let visibleCount = Math.max(10, Math.floor(totalItems / composerZoomLevel));
     document.getElementById('lyricModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeLyricModal(); });
     
     function renderTable() {
-        renderTableHeader();
-        const tbody = document.getElementById('songTableBody');
-        tbody.innerHTML = '';
-        const isVocaloid = (currentCategory === 'ボカロ');
-        const displaySongs = filteredSongs.slice(0, currentDisplayCount);
-        displaySongs.forEach(song => {
-            const row = tbody.insertRow();
-            row.className = 'song-row';
-            row.onclick = () => selectSong(song);
-            row.ondblclick = () => showLyrics(song);
-            row.insertCell(0).innerHTML = `<strong>${escapeHtml(song.title || '?')}</strong>`;
-            row.insertCell(1).innerHTML = escapeHtml(song.artist || '—');
-            row.insertCell(2).innerHTML = escapeHtml(song.album || '—');
-            row.insertCell(3).innerHTML = escapeHtml(song.composer || '—');
-            row.insertCell(4).innerHTML = song.year || '—';
-            row.insertCell(5).innerHTML = song.duration || '—';
-            if (isVocaloid) row.insertCell(6).innerHTML = song.tune ? `<span class="badge">${escapeHtml(song.tune)}</span>` : '';
-        });
-        document.getElementById('statsInCard').innerHTML = `显示 ${displaySongs.length} / ${filteredSongs.length} 首歌曲（双击查看歌词）`;
-        document.getElementById('loadingMore').style.display = (currentDisplayCount < filteredSongs.length) ? 'block' : 'none';
-        if (displaySongs.length > 0) {
-            const stillSelected = currentSelectedSong && displaySongs.some(s => s.title === currentSelectedSong.title && s.artist === currentSelectedSong.artist);
-            if (!stillSelected) { selectSong(displaySongs[0]); document.querySelectorAll('.song-row')[0]?.classList.add('selected'); }
-            else {
-                const idx = displaySongs.findIndex(s => s.title === currentSelectedSong.title && s.artist === currentSelectedSong.artist);
-                if (idx !== -1) document.querySelectorAll('.song-row')[idx]?.classList.add('selected');
-            }
+    renderTableHeader();
+    const tbody = document.getElementById('songTableBody');
+    tbody.innerHTML = '';
+    const isVocaloid = (currentCategory === 'ボカロ');
+    const displaySongs = filteredSongs.slice(0, currentDisplayCount);
+
+    displaySongs.forEach(song => {
+        const row = tbody.insertRow();
+        row.className = 'song-row';
+        row.onclick = () => selectSong(song);
+        row.ondblclick = () => showLyrics(song);
+
+        // 标题列
+        let cell = row.insertCell(0);
+        cell.innerHTML = `<strong>${escapeHtml(song.title || '?')}</strong>`;
+        cell.setAttribute('data-label', '标题');
+
+        // 艺术家列
+        cell = row.insertCell(1);
+        cell.innerHTML = escapeHtml(song.artist || '—');
+        cell.setAttribute('data-label', '艺术家');
+
+        // 专辑列
+        cell = row.insertCell(2);
+        cell.innerHTML = escapeHtml(song.album || '—');
+        cell.setAttribute('data-label', '专辑');
+
+        // 作曲列
+        cell = row.insertCell(3);
+        cell.innerHTML = escapeHtml(song.composer || '—');
+        cell.setAttribute('data-label', '作曲');
+
+        // 年份列
+        cell = row.insertCell(4);
+        cell.innerHTML = song.year || '—';
+        cell.setAttribute('data-label', '年份');
+
+        // 时长列
+        cell = row.insertCell(5);
+        cell.innerHTML = song.duration || '—';
+        cell.setAttribute('data-label', '时长');
+
+        // 调校列（仅ボカロ类别）
+        if (isVocaloid) {
+            cell = row.insertCell(6);
+            cell.innerHTML = song.tune ? `<span class="badge">${escapeHtml(song.tune)}</span>` : '';
+            cell.setAttribute('data-label', '调校');
+        }
+    });
+
+    document.getElementById('statsInCard').innerHTML = `显示 ${displaySongs.length} / ${filteredSongs.length} 首歌曲（双击查看歌词）`;
+    document.getElementById('loadingMore').style.display = (currentDisplayCount < filteredSongs.length) ? 'block' : 'none';
+
+    if (displaySongs.length > 0) {
+        const stillSelected = currentSelectedSong && displaySongs.some(s => s.title === currentSelectedSong.title && s.artist === currentSelectedSong.artist);
+        if (!stillSelected) {
+            selectSong(displaySongs[0]);
+            document.querySelectorAll('.song-row')[0]?.classList.add('selected');
+        } else {
+            const idx = displaySongs.findIndex(s => s.title === currentSelectedSong.title && s.artist === currentSelectedSong.artist);
+            if (idx !== -1) document.querySelectorAll('.song-row')[idx]?.classList.add('selected');
         }
     }
+}
     
     function loadMore() {
         if (isLoadingMore || currentDisplayCount >= filteredSongs.length) return;
