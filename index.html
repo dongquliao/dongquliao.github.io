@@ -823,36 +823,91 @@
     let realSingerCount = {};
     let minYear = 3000, maxYear = 0;
     
-    // ========== 第一步：判断哪些作曲者是 P主 ==========
-    let pComposerSet = new Set();  // 存储被判定为 P主的作曲者
+    // ========== P主别名映射表 ==========
+    const composerAliasMap = {
+        'ハチ': 'ハチ / 米津玄師',
+        '米津玄師': 'ハチ / 米津玄師',
+        'kemu': 'kemu / 堀江晶太',
+        '堀江晶太': 'kemu / 堀江晶太',
+        'バルーン': 'バルーン / 須田景凪',
+        '須田景凪': 'バルーン / 須田景凪',
+        '蝶々P': '蝶々P / 一之瀬ユウ',
+        '一之瀬ユウ': '蝶々P / 一之瀬ユウ',
+        'はりーP': 'はりーP / 針原翼',
+        '針原翼': 'はりーP / 針原翼',
+        'こんにちは谷田さん': 'こんにちは谷田さん / キタニタツヤ',
+        'キタニタツヤ': 'こんにちは谷田さん / キタニタツヤ',
+        'ねこぼーろ': 'ねこぼーろ / ササノマリイ',
+        'ササノマリイ': 'ねこぼーろ / ササノマリイ',
+        '有機酸': '有機酸 / 神山羊',
+        '神山羊': '有機酸 / 神山羊',
+        'john': 'john / TOOBOE',
+        'TOOBOE': 'john / TOOBOE',
+        'トーマ': 'トーマ / Gyoson',
+        'Gyoson': 'トーマ / Gyoson',
+        'mao sasagawa': 'mao sasagawa / 笹川真生',
+        '笹川真生': 'mao sasagawa / 笹川真生',
+        'ぽりふぉ': 'ぽりふぉ / PolyphonicBranch',
+        'PolyphonicBranch': 'ぽりふぉ / PolyphonicBranch',
+        'risou': 'risou / 澤田空海理',
+        '澤田空海理': 'risou / 澤田空海理',
+        'kaoling': 'kaoling / 大越香里',
+        '大越香里': 'kaoling / 大越香里',
+        'もじゃ': 'もじゃ / 大柴広己',
+        '大柴広己': 'もじゃ / 大柴広己',
+        'KBShinya': 'KBShinya / 塔库 / 禹歌',
+        '塔库': 'KBShinya / 塔库 / 禹歌',
+        '禹歌': 'KBShinya / 塔库 / 禹歌',
+        '著小生zoki': '著小生zoki / 鱼子酱',
+        '鱼子酱': '著小生zoki / 鱼子酱',
+        '米库喵': '米库喵 / 恩雅NYA',
+        '恩雅NYA': '米库喵 / 恩雅NYA',
+        'TSAR': 'TSAR / 崔瀚普',
+        '崔瀚普': 'TSAR / 崔瀚普',
+        '籽三': '籽三 / 兰音Reine',
+        '兰音Reine': '籽三 / 兰音Reine'
+    };
     
+    // ========== 特殊 P主：只统计ボカロ类别 ==========
+    const specialPComposers = new Set(['许嵩', 'Bo Peep']);
+    
+    // ========== 获取所有需要强制加入 P主集合的原始名字 ==========
+    let forcedPComposerNames = new Set();
+    for (let originalName of Object.keys(composerAliasMap)) {
+        forcedPComposerNames.add(originalName);
+    }
+    
+    // ========== 第一步：判断哪些作曲者是 P主 ==========
+    let pComposerSet = new Set();
+    
+    // 1. 强制添加映射表中的所有原始名字
+    for (let name of forcedPComposerNames) {
+        pComposerSet.add(name);
+    }
+    
+    // 2. 遍历所有歌曲，根据规则判断其他作曲者是否为 P主
     for (let song of allSongs) {
         let category = song.category;
         let comment = (song.comment || '').toLowerCase();
         let composerList = song.composer_list || [];
         
-        // 判断该歌曲的作曲者是否应该被认定为 P主
         let isPComposer = false;
         
         if (category === 'ボカロ') {
-            // ボカロ：注释含"翻调"且不含"feat." → 不计入，其他都计入
             if (!(comment.includes('翻调') && !comment.includes('feat.'))) {
                 isPComposer = true;
             }
         } else if (category === '人声') {
-            // 人声：注释同时含"翻唱"和"feat." → 计入
             if (comment.includes('翻唱') && comment.includes('feat.')) {
                 isPComposer = true;
             }
         } else if (category === '纯音乐') {
-            // 纯音乐：注释同时含"伴奏"和"feat." → 计入
             if (comment.includes('伴奏') && comment.includes('feat.')) {
                 isPComposer = true;
             }
         }
         // AI 类别不计入
         
-        // 如果该歌曲的作曲者被判定为 P主，将作曲者加入集合
         if (isPComposer) {
             for (let c of composerList) {
                 if (c && c.trim()) {
@@ -875,15 +930,42 @@
             if (yearNum > maxYear) maxYear = yearNum;
         }
         
-        // ========== P主统计（使用新逻辑） ==========
+        // ========== P主统计 ==========
         let composerList = song.composer_list || [];
+        let processedComposers = new Set(); // 避免一首歌中同一人重复计数
+        
         for (let c of composerList) {
-            if (c && pComposerSet.has(c)) {
+            if (!c) continue;
+            
+            // 特殊处理：许嵩和 Bo Peep 只统计ボカロ类别
+            if (specialPComposers.has(c)) {
+                if (song.category === 'ボカロ' && pComposerSet.has(c) && !processedComposers.has(c)) {
+                    processedComposers.add(c);
+                    composerCount[c] = (composerCount[c] || 0) + 1;
+                }
+            } 
+            // 普通 P主：正常统计（所有类别）
+            else if (pComposerSet.has(c) && !processedComposers.has(c)) {
+                processedComposers.add(c);
                 composerCount[c] = (composerCount[c] || 0) + 1;
             }
         }
-        
-        // ========== 歌姬统计（仅ボカロ） ==========
+    }
+    
+    // ========== 第三步：合并 P主别名 ==========
+    let mergedComposerCount = {};
+    
+    for (let [name, count] of Object.entries(composerCount)) {
+        // 检查是否需要映射到合并名
+        let mergedName = composerAliasMap[name] || name;
+        mergedComposerCount[mergedName] = (mergedComposerCount[mergedName] || 0) + count;
+    }
+    
+    // 替换 composerCount 为合并后的版本
+    composerCount = mergedComposerCount;
+    
+    // ========== 歌姬统计（仅ボカロ） ==========
+    for (let song of allSongs) {
         if (song.category === 'ボカロ') {
             if (song.vocaloid_artist && song.vocaloid_artist.virtual) {
                 for (let v of song.vocaloid_artist.virtual) if (v) virtualSingerCount[v] = (virtualSingerCount[v] || 0) + 1;
