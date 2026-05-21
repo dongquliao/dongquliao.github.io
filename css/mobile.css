@@ -1,0 +1,121 @@
+@media (max-width: 768px) {
+    .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .source-card-line {
+        flex-direction: column;
+        gap: 2px;
+        margin-bottom: 6px;
+    }
+    
+    .source-label {
+        width: auto;
+    }
+    
+    .source-links {
+        text-align: left;
+    }
+    
+    #songTable thead {
+        display: none;
+    }
+    
+    #songTable,
+    #songTable tbody,
+    #songTable tr,
+    #songTable td {
+        display: block;
+        width: 100%;
+    }
+    
+    #songTable tr {
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 12px;
+        background: white;
+        box-sizing: border-box;
+        position: relative;
+    }
+    
+    #songTable td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border: none;
+        white-space: normal;
+        word-break: break-word;
+    }
+    
+    #songTable td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        width: 80px;
+        flex-shrink: 0;
+        color: #666;
+        font-size: 13px;
+    }
+    
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        border-radius: 12px;
+    }
+    
+    .header {
+        padding: 16px 20px;
+    }
+    
+    .header-left h1 {
+        font-size: 22px;
+    }
+    
+    .category-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .filter-group {
+        justify-content: space-between;
+    }
+    
+    .filter-group select,
+    .filter-group button {
+        flex: 1;
+    }
+    
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .cover-section {
+        max-width: 100%;
+        order: -1;
+        margin-bottom: 20px;
+    }
+    
+    .cover-card.sticky {
+        position: relative;
+        top: 0;
+    }
+    
+    #songTable td strong {
+        font-weight: 600;
+    }
+}
