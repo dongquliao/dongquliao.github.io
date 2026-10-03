@@ -61,6 +61,30 @@ function setupIntersectionObserver(onSelectSong, onShowLyrics) {
 }
 
 export function setupEventListeners(onSelectSong, onShowLyrics) {
+        // Bilibili 头像彩蛋
+    // PC 端使用 CSS hover，手机端使用点击打开/关闭
+    const bilibiliTrigger = document.getElementById('bilibiliProfileTrigger');
+
+    if (bilibiliTrigger) {
+        bilibiliTrigger.addEventListener('click', (e) => {
+            // 手机端才使用点击控制
+            if (window.innerWidth > 768) return;
+
+            // 如果点击的是头像链接，让链接正常跳转
+            if (e.target.closest('a')) return;
+
+            e.preventDefault();
+            bilibiliTrigger.classList.toggle('is-open');
+        });
+
+        // 点击页面其他位置时关闭
+        document.addEventListener('click', (e) => {
+            if (!bilibiliTrigger.contains(e.target)) {
+                bilibiliTrigger.classList.remove('is-open');
+            }
+        });
+    }
+
     // 搜索输入
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
