@@ -4,7 +4,7 @@
     body {
         padding: 8px;
     }
-    
+
     .container {
         border-radius: 12px;
         overflow: hidden;
@@ -19,7 +19,57 @@
         font-size: 16px;
         margin-bottom: 2px;
     }
-    
+
+    /* ===== 手机端 Bilibili 头像彩蛋 ===== */
+
+.site-title {
+    display: inline-block;
+}
+
+.bilibili-profile-trigger {
+    position: relative;
+    cursor: pointer;
+}
+
+/*
+ * 手机端默认不显示浮窗。
+ * 由 JS 添加 .is-open 后显示。
+ */
+.bilibili-popup {
+    display: flex;
+
+    top: calc(100% + 8px);
+    left: 0;
+
+    gap: 8px;
+    padding: 7px;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transform: translateY(-4px);
+
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease,
+        visibility 0.15s ease;
+}
+
+/* 手机端点击后打开 */
+.bilibili-profile-trigger.is-open .bilibili-popup {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+/* 手机端头像稍微小一点 */
+.bilibili-popup a {
+    width: 44px;
+    height: 44px;
+}
+
     .update-info {
         font-size: 9px;
     }
